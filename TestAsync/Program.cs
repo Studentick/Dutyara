@@ -18,6 +18,7 @@ namespace TestAsync
         static string dut_data = "";
         // Дремя, которое даётся уту на то чтобы дать ответ
         static int time_to_dut_read = 3000;
+        int
 
 
         static void Main(string[] args)
@@ -49,7 +50,10 @@ namespace TestAsync
 
                     //if (!Dutyara.opened)
                     {
-                        
+                        if (dut_data != "")
+                        {
+                            CheckData();
+                        }
                         if (sw.ElapsedMilliseconds > time_to_dut_read)
                         {
                             Dutyara.need_a_stop = true;
@@ -79,9 +83,21 @@ namespace TestAsync
             );
         }
 
+        // Проверка полученных данных от ДУТа
+        // в случае, если данные дошли в целосности - отправляет их получателю
+        // в случае если данные пришли в повреждённом виде - отправляем получателю соответствующий код ошибки
+        private static int CheckData()
+        {
+            throw new NotImplementedException();
+        }
+
         // Перейти к опросу следующего ДУТа 
         static void GoToNextDut()
         {
+            Dutyara.need_a_stop = true;
+            Dutyara.opened = true;
+            dut_data = "";
+            dut_selected = (dut_selected + 1) % dut_list.Count();
 
         }
 
