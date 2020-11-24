@@ -17,7 +17,7 @@ namespace TestAsync
         static Stopwatch sw = new Stopwatch();
         static string dut_data = "";
         // Дремя, которое даётся уту на то чтобы дать ответ
-        static int time_to_dut_read = 3000;
+        static int time_to_dut_read = 5000;
         static int? message_status = null;
         const int MSG_SUCCESS = 1, MSG_FAIL = 0, MSG_DROP = -1;
         const string FAIL_VALUE = "65536", DROP_VALUE = "65533";
@@ -26,6 +26,7 @@ namespace TestAsync
 
         static void Main(string[] args)
         {
+            Dutyara.GetPorts();
             dut_list.Add(new Dutyara(44, 9600));
             dut_list.Add(new Dutyara(56, 9600));
             DutControl();
@@ -40,13 +41,16 @@ namespace TestAsync
         {
             await Task.Run(() =>
             {
-                while (true)
+                bool tt = true;
+                while (tt)
                 {
-                    Console.WriteLine(sw.ElapsedMilliseconds);
+                    // Console.WriteLine(sw.ElapsedMilliseconds);
                     if (Dutyara.opened)
                     {
                         sw.Restart();
                         Dutyara.opened = false;
+                        dut_list[dut_selected].GetData();
+                        dut_list[dut_selected].SendMsg();
                         //GetAnsver();
                     }
                     else
@@ -93,10 +97,11 @@ namespace TestAsync
 
                             GoToNextDut();
                         }
+                        else dut_data = dut_list[dut_selected].GetData();
                     }
 
                     Thread.Sleep(1000);
-                    
+
 
                     // Если таймер больше Х то меняется номер дута и открываем opened 
                     //          Если у нового дута другая скорость меняем текущую скорость
@@ -166,7 +171,7 @@ namespace TestAsync
             Dutyara.opened = true;
             dut_data = "";
             dut_selected = (dut_selected + 1) % dut_list.Count();
-
+            message_status = null;
         }
 
         // Полечить ответ от ДУТа

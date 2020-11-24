@@ -48,32 +48,72 @@ namespace TestAsync
 
         public string GetData()
         {
-            var ans = "N0=+210=01345.27=00632.55=094";
-            //string answer = "Ответ от " + this.id + ": " + ans;
-            string answer = this.id + ans;
-            int timeout = rnd.Next(1000, 5000);
-            if (timeout <= 5000)
-            {
-                return answer;
-            }
-            else
-            {
-                while (true)
+            if (flag == true)
+                try
                 {
-                    if (need_a_stop)
+                    byte[] inp;
+                    int inpQty = 0;
+                    string sReceiveDT = "";
+                    string message = "";
+
+                    // Если изменились настройки порта, перенастраиваем порт
+                    if (serialP.PortName != selectedPort)
                     {
-                        need_a_stop = false;
-                        return "";
+                        serialP.Close();
+                        serialP.PortName = selectedPort;
+                    }
+                    if (serialP.BaudRate != selectedSpeed)
+                    {
+                        serialP.Close();
+                        serialP.BaudRate = selectedSpeed;
+                    }
+                    if (serialP.Parity != System.IO.Ports.Parity.None)
+                    {
+                        serialP.Close();
+                        serialP.Parity = System.IO.Ports.Parity.None;
+                    }
+
+
+                    // Если порт закрыт, открываем
+                    if (!serialP.IsOpen)
+                        serialP.Open();
+
+                    if (serialP.IsOpen)
+                    {
+                        inp = new Byte[4096];
+                        inpQty = 0;
+
+                        if (serialP.BytesToRead > 0)    //если пришли данные
+                        {
+                            sReceiveDT = DateTime.Now.Hour.ToString("00") + ":" + DateTime.Now.Minute.ToString("00") + ":" + DateTime.Now.Second.ToString("00") + "." + DateTime.Now.Millisecond.ToString("000");
+                            inpQty = serialP.BytesToRead;               //определяем количество байт, которые пришли
+                            serialP.Read(inp, 0, serialP.BytesToRead);  //считываем данные
+
+
+                            // ПОКАЗ В СПИСКЕ
+                            if (inpQty > 0)
+                            {
+                                message = "";
+
+                                for (Int32 i = 0; i < inpQty; i++)
+                                    message += " " + ByteToStrHex(inp[i]);      //формируем сообщение для отображения в ListView
+                                
+                                Console.WriteLine("HEX: " + message);
+                                message = Encoding.ASCII.GetString(inp, 0, inpQty); // GatewayServer
+                                Console.WriteLine("ASCII: " + message);
+                                return message;
+                            }
+                        }
                     }
                 }
-                return "";
-            }
-            
+                catch (Exception ex) { Console.WriteLine(ex.Message); }
+            return "";
+
         }
 
 
 
-        static private void GetPorts()
+        static public void GetPorts()
         {
             try
             {
@@ -103,15 +143,15 @@ namespace TestAsync
             catch (Exception ex) { Console.WriteLine(ex.Message); }
         }
 
-        public static void SendMsg(string msg)
+        public void SendMsg()
         {
             //string temp = "33722";
             string pre = "4D ", post = " 0D";
-            byte[] ggg = Encoding.ASCII.GetBytes(msg);
+            byte[] ggg = Encoding.ASCII.GetBytes(this.id.ToString());
             string gggg = "";
             for (Int32 i = 0; i < ggg.Length; i++)
                 gggg += " " + ByteToStrHex(ggg[i]);
-            gggg = pre + gggg + post;
+            //gggg = pre + gggg + post;
             byte[] bmsg = StrHexToByte(gggg.Replace(" ", ""));
             // = Encoding.ASCII.GetBytes("M33722");
             int bl = bmsg.Length;
