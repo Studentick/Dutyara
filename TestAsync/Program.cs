@@ -26,8 +26,8 @@ namespace TestAsync
 
         static void Main(string[] args)
         {
-            dut_list.Add(new Dutyara(1, 44));
-            dut_list.Add(new Dutyara(2, 44));
+            dut_list.Add(new Dutyara(44, 9600));
+            dut_list.Add(new Dutyara(56, 9600));
             DutControl();
             //while (true)
             {
@@ -47,7 +47,7 @@ namespace TestAsync
                     {
                         sw.Restart();
                         Dutyara.opened = false;
-                        GetAnsver();
+                        //GetAnsver();
                     }
                     else
 
