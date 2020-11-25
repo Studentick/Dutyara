@@ -17,15 +17,17 @@ namespace TestAsync
         static Stopwatch sw = new Stopwatch();
         static string dut_data = "";
         // Дремя, которое даётся уту на то чтобы дать ответ
-        static int time_to_dut_read = 5000;
+        static int time_to_dut_read = 20000;
         static int? message_status = null;
         const int MSG_SUCCESS = 1, MSG_FAIL = 0, MSG_DROP = -1;
         const string FAIL_VALUE = "65536", DROP_VALUE = "65533";
         public static Dutyara.MessageContent message_content = new Dutyara.MessageContent();
+        static bool need_request = true;
 
 
         static void Main(string[] args)
         {
+            TopWindowSet.setTop();
             Dutyara.GetPorts();
             dut_list.Add(new Dutyara(44, 9600));
             dut_list.Add(new Dutyara(56, 9600));
@@ -41,72 +43,77 @@ namespace TestAsync
         {
             await Task.Run(() =>
             {
-                bool tt = true;
-                while (tt)
+                
+                while (true)
                 {
-                    // Console.WriteLine(sw.ElapsedMilliseconds);
-                    if (Dutyara.opened)
+                    //bool tt = true;
+                    while (need_request)
                     {
-                        sw.Restart();
-                        Dutyara.opened = false;
-                        dut_list[dut_selected].GetData();
-                        dut_list[dut_selected].SendMsg();
-                        //GetAnsver();
-                    }
-                    else
-
-                    //if (!Dutyara.opened)
-                    {
-                        //dut_data = "44N0=+210=01345.27=00632.55=094";
-                        if (dut_data != "")
+                        // Console.WriteLine(sw.ElapsedMilliseconds);
+                        if (Dutyara.opened)
                         {
-                            CheckData(dut_data);
+                            sw.Restart();
+                            Dutyara.opened = false;
+                            dut_list[dut_selected].GetData();
+                            dut_list[dut_selected].SendMsg();
+                            //GetAnsver();
                         }
-                        // Так должно быть лучше, но нужно проверит, а на это нет времени:
                         else
-                        if (sw.ElapsedMilliseconds > time_to_dut_read)
+
+                        //if (!Dutyara.opened)
                         {
-                            message_status = MSG_FAIL;  
+                            //dut_data = "44N0=+210=01345.27=00632.55=094";
+                            if (dut_data != "")
+                            {
+                                CheckData(dut_data);
+                            }
+                            // Так должно быть лучше, но нужно проверит, а на это нет времени:
+                            else
+                            if (sw.ElapsedMilliseconds > time_to_dut_read)
+                            {
+                                message_status = MSG_FAIL;
+                            }
+
+                            switch (message_status)
+                            {
+                                case MSG_FAIL:
+                                    message_content.id = dut_list[dut_selected].Id.ToString();
+                                    message_content.water = FAIL_VALUE;
+                                    message_content.fuel = FAIL_VALUE;
+                                    message_content.temp = FAIL_VALUE;
+                                    //dut_data = "44N0=65536=65536=65536=094";
+                                    break;
+                                case MSG_DROP:
+                                    message_content.id = dut_list[dut_selected].Id.ToString();
+                                    message_content.water = DROP_VALUE;
+                                    message_content.fuel = DROP_VALUE;
+                                    message_content.temp = DROP_VALUE;
+                                    break;
+                                default:
+                                    break;
+                            }
+
+                            if (message_status != null)
+                            {
+                                if (message_status != MSG_SUCCESS)
+                                    dut_data = message_content.id + "N0=" + message_content.temp + "=" +
+                                                    message_content.fuel + "=" + message_content.water + "=094"; //"44N0=65536=65536=65536=094";
+                                Console.WriteLine(dut_data);
+
+                                GoToNextDut();
+                            }
+                            else dut_data = dut_list[dut_selected].GetData();
+                            Thread.Sleep(1000);
                         }
 
-                        switch (message_status)
-                        {
-                            case MSG_FAIL:
-                                message_content.id = dut_list[dut_selected].Id.ToString();
-                                message_content.water = FAIL_VALUE;
-                                message_content.fuel = FAIL_VALUE;
-                                message_content.temp = FAIL_VALUE;
-                                //dut_data = "44N0=65536=65536=65536=094";
-                                break;
-                            case MSG_DROP:
-                                message_content.id = dut_list[dut_selected].Id.ToString();
-                                message_content.water = DROP_VALUE;
-                                message_content.fuel = DROP_VALUE;
-                                message_content.temp = DROP_VALUE;
-                                break;
-                            default:
-                                break;
-                        }
+                        
 
-                        if (message_status != null)
-                        {
-                            if (message_status != MSG_SUCCESS)
-                            dut_data = message_content.id + "N0=" + message_content.temp + "=" +
-                                            message_content.fuel + "=" + message_content.water + "=094"; //"44N0=65536=65536=65536=094";
-                            Console.WriteLine(dut_data);
 
-                            GoToNextDut();
-                        }
-                        else dut_data = dut_list[dut_selected].GetData();
+                        // Если таймер больше Х то меняется номер дута и открываем opened 
+                        //          Если у нового дута другая скорость меняем текущую скорость
+
+
                     }
-
-                    Thread.Sleep(1000);
-
-
-                    // Если таймер больше Х то меняется номер дута и открываем opened 
-                    //          Если у нового дута другая скорость меняем текущую скорость
-
-
                 }
             }
             );
@@ -147,6 +154,21 @@ namespace TestAsync
                 {
                     message_status = MSG_DROP; return;
                 }
+                // Если айдишник отличается от запрашиваемого - данные считаются битыми, т.к. пришли от другого ДУТа
+                if (dut_id != dut_list[dut_selected].Id.ToString())
+                {
+                    message_status = MSG_DROP; Console.WriteLine("Err!"); return;
+                    // Альтернативный способ решения: 
+                    //message_status = null; return;
+
+
+                    //int irr = 0;
+                    //while (irr <= 25)
+                    //{
+                    //Console.WriteLine("Err!");
+                    //    irr++;
+                    //}
+                }
                 // ХЗ что хз зачем, но вдроуг пригодится
                 //bb = float.TryParse(dut_data_arr[4].Replace(".", ","), out i);
                 //if (!bb)
@@ -170,7 +192,12 @@ namespace TestAsync
             Dutyara.need_a_stop = true;
             Dutyara.opened = true;
             dut_data = "";
-            dut_selected = (dut_selected + 1) % dut_list.Count();
+            dut_selected = (dut_selected + 1);
+            if (dut_selected >= dut_list.Count())
+            {
+                // need_request = false;
+                dut_selected %= dut_list.Count();
+            }
             message_status = null;
         }
 

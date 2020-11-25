@@ -23,6 +23,8 @@ namespace TestAsync
         static int selectedSpeed = 9600;
         static bool flag = true;
 
+        MessageContent msg_cont;
+
         public int Id
         {
             get
@@ -43,6 +45,7 @@ namespace TestAsync
         {
             this.id = id;
             this.speed = speed;
+            msg_cont = new MessageContent();
         }
         
 
