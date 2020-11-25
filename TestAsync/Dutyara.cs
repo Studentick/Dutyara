@@ -101,9 +101,9 @@ namespace TestAsync
                                 for (Int32 i = 0; i < inpQty; i++)
                                     message += " " + ByteToStrHex(inp[i]);      //формируем сообщение для отображения в ListView
                                 
-                                Console.WriteLine("HEX: " + message);
+                                // Console.WriteLine("HEX: " + message);
                                 message = Encoding.ASCII.GetString(inp, 0, inpQty); // GatewayServer
-                                Console.WriteLine("ASCII: " + message);
+                                // Console.WriteLine("ASCII: " + message);
                                 return message;
                             }
                         }
@@ -158,7 +158,14 @@ namespace TestAsync
             byte[] bmsg = StrHexToByte(gggg.Replace(" ", ""));
             // = Encoding.ASCII.GetBytes("M33722");
             int bl = bmsg.Length;
-            serialP.Write(bmsg, 0, bl);
+            try
+            {
+                serialP.Write(bmsg, 0, bl);
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine("По ходу отвалился порт");
+            }
         }
 
         public static byte[] FromHex(string hex)

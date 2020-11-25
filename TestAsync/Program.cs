@@ -17,7 +17,7 @@ namespace TestAsync
         static Stopwatch sw = new Stopwatch();
         static string dut_data = "";
         // Дремя, которое даётся уту на то чтобы дать ответ
-        static int time_to_dut_read = 20000;
+        static int time_to_dut_read = 5000;
         static int? message_status = null;
         const int MSG_SUCCESS = 1, MSG_FAIL = 0, MSG_DROP = -1;
         const string FAIL_VALUE = "65536", DROP_VALUE = "65533";
@@ -29,7 +29,7 @@ namespace TestAsync
         {
             // TopWindowSet.setTop();
             Dutyara.GetPorts();
-            dut_list.Add(new Dutyara(44, 9600));
+            dut_list.Add(new Dutyara(33722, 9600));
             dut_list.Add(new Dutyara(56, 9600));
             DutControl();
             //while (true)
@@ -103,7 +103,7 @@ namespace TestAsync
                                 GoToNextDut();
                             }
                             else dut_data = dut_list[dut_selected].GetData();
-                            Thread.Sleep(1000);
+                            Thread.Sleep(500);
                         }
 
                         
@@ -133,7 +133,7 @@ namespace TestAsync
             else
             {
                 // Проверяем является ли айдишник числом
-                string dut_id = dut_data_arr[0].Substring(1, dut_data_arr[0].Length - 4);
+                string dut_id = dut_data_arr[0].Substring(0, dut_data_arr[0].Length - 2);
                 // dut_id = dut_id.Substring(1, dut_id.Length-2);
                 float i = 0;
                 var bb = float.TryParse(dut_id, out i);
@@ -156,7 +156,8 @@ namespace TestAsync
                     message_status = MSG_DROP; return;
                 }
                 // Если айдишник отличается от запрашиваемого - данные считаются битыми, т.к. пришли от другого ДУТа
-                if (dut_id != dut_list[dut_selected].Id.ToString())
+                var idish = dut_list[dut_selected].Id.ToString();
+                if (dut_id != idish)
                 {
                     message_status = MSG_DROP; Console.WriteLine("Err!"); return;
                     // Альтернативный способ решения: 
