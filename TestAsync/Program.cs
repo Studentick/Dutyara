@@ -21,13 +21,13 @@ namespace TestAsync
         static int? message_status = null;
         const int MSG_SUCCESS = 1, MSG_FAIL = 0, MSG_DROP = -1;
         const string FAIL_VALUE = "65536", DROP_VALUE = "65533";
-        public static Dutyara.MessageContent message_content = new Dutyara.MessageContent();
+        //public static Dutyara.MessageContent dut_list[dut_selected].msg_cont = new Dutyara.MessageContent();
         static bool need_request = true;
 
 
         static void Main(string[] args)
         {
-            TopWindowSet.setTop();
+            // TopWindowSet.setTop();
             Dutyara.GetPorts();
             dut_list.Add(new Dutyara(44, 9600));
             dut_list.Add(new Dutyara(56, 9600));
@@ -77,17 +77,17 @@ namespace TestAsync
                             switch (message_status)
                             {
                                 case MSG_FAIL:
-                                    message_content.id = dut_list[dut_selected].Id.ToString();
-                                    message_content.water = FAIL_VALUE;
-                                    message_content.fuel = FAIL_VALUE;
-                                    message_content.temp = FAIL_VALUE;
+                                    dut_list[dut_selected].msg_cont.id = dut_list[dut_selected].Id.ToString();
+                                    dut_list[dut_selected].msg_cont.water = FAIL_VALUE;
+                                    dut_list[dut_selected].msg_cont.fuel = FAIL_VALUE;
+                                    dut_list[dut_selected].msg_cont.temp = FAIL_VALUE;
                                     //dut_data = "44N0=65536=65536=65536=094";
                                     break;
                                 case MSG_DROP:
-                                    message_content.id = dut_list[dut_selected].Id.ToString();
-                                    message_content.water = DROP_VALUE;
-                                    message_content.fuel = DROP_VALUE;
-                                    message_content.temp = DROP_VALUE;
+                                    dut_list[dut_selected].msg_cont.id = dut_list[dut_selected].Id.ToString();
+                                    dut_list[dut_selected].msg_cont.water = DROP_VALUE;
+                                    dut_list[dut_selected].msg_cont.fuel = DROP_VALUE;
+                                    dut_list[dut_selected].msg_cont.temp = DROP_VALUE;
                                     break;
                                 default:
                                     break;
@@ -95,9 +95,9 @@ namespace TestAsync
 
                             if (message_status != null)
                             {
-                                if (message_status != MSG_SUCCESS)
-                                    dut_data = message_content.id + "N0=" + message_content.temp + "=" +
-                                                    message_content.fuel + "=" + message_content.water + "=094"; //"44N0=65536=65536=65536=094";
+                                //if (message_status != MSG_SUCCESS)
+                                    dut_data = dut_list[dut_selected].msg_cont.id + "N0=" + dut_list[dut_selected].msg_cont.temp + "=" +
+                                                    dut_list[dut_selected].msg_cont.fuel + "=" + dut_list[dut_selected].msg_cont.water + "=094"; //"44N0=65536=65536=65536=094";
                                 Console.WriteLine(dut_data);
 
                                 GoToNextDut();
@@ -133,7 +133,8 @@ namespace TestAsync
             else
             {
                 // Проверяем является ли айдишник числом
-                string dut_id = dut_data_arr[0].Substring(0, dut_data_arr[0].Length - 2);
+                string dut_id = dut_data_arr[0].Substring(1, dut_data_arr[0].Length - 4);
+                // dut_id = dut_id.Substring(1, dut_id.Length-2);
                 float i = 0;
                 var bb = float.TryParse(dut_id, out i);
                 if (!bb)
@@ -177,10 +178,10 @@ namespace TestAsync
                 //}
 
                 message_status = MSG_SUCCESS;
-                message_content.id = dut_id;
-                message_content.fuel = dut_data_arr[2];
-                message_content.water = dut_data_arr[3];
-                message_content.temp = dut_data_arr[1];
+                dut_list[dut_selected].msg_cont.id = dut_id;
+                dut_list[dut_selected].msg_cont.fuel = dut_data_arr[2];
+                dut_list[dut_selected].msg_cont.water = dut_data_arr[3];
+                dut_list[dut_selected].msg_cont.temp = dut_data_arr[1];
 
             }
             return;

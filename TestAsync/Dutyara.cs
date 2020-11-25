@@ -23,7 +23,7 @@ namespace TestAsync
         static int selectedSpeed = 9600;
         static bool flag = true;
 
-        MessageContent msg_cont;
+        public MessageContent msg_cont;
 
         public int Id
         {
@@ -154,7 +154,7 @@ namespace TestAsync
             string gggg = "";
             for (Int32 i = 0; i < ggg.Length; i++)
                 gggg += " " + ByteToStrHex(ggg[i]);
-            //gggg = pre + gggg + post;
+            gggg = pre + gggg + post;
             byte[] bmsg = StrHexToByte(gggg.Replace(" ", ""));
             // = Encoding.ASCII.GetBytes("M33722");
             int bl = bmsg.Length;
