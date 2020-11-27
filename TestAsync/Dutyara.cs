@@ -4,6 +4,7 @@ using System.IO.Ports;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TestAsync.Properties;
 
 namespace TestAsync
 {
@@ -24,12 +25,28 @@ namespace TestAsync
         static bool flag = true;
 
         public MessageContent msg_cont;
+        private float corrector;
+
 
         public int Id
         {
             get
             {
                 return id;
+            }
+        }
+
+        public float Corrector
+        {
+            get
+            {
+                return corrector;
+            }
+
+            set
+            {
+                if (value >= 0)
+                    corrector = value;
             }
         }
 
@@ -41,10 +58,11 @@ namespace TestAsync
             public string temp;
         }
 
-        public Dutyara(int id, int speed = 9600)
+        public Dutyara(int id, int speed = 9600, float corrector = 0)
         {
             this.id = id;
             this.speed = speed;
+            this.corrector = corrector;
             msg_cont = new MessageContent();
         }
         
@@ -118,6 +136,7 @@ namespace TestAsync
 
         static public void GetPorts()
         {
+            
             try
             {
                 string[] ports = SerialPort.GetPortNames(); //получаем список доступных СОМ-портов
@@ -128,15 +147,25 @@ namespace TestAsync
 
                 if (ports.Length >= 1)
                 {
-                    Console.WriteLine("Выберите порт:");
-
-                    // выводим список портов
-                    for (int counter = 0; counter < ports.Length; counter++)
+                    int def_port = portsList.IndexOf(Settings.Default.def_port);
+                    if (def_port != -1)
                     {
-                        Console.WriteLine("[" + counter.ToString() + "] " + ports[counter].ToString());
+                        selectedPort = Settings.Default.def_port;
                     }
-                    int selected_p = int.Parse(Console.ReadLine());
-                    selectedPort = ports[selected_p];
+                    else
+                    {
+                        Console.WriteLine("Выберите порт:");
+
+                        // выводим список портов
+                        for (int counter = 0; counter < ports.Length; counter++)
+                        {
+                            Console.WriteLine("[" + counter.ToString() + "] " + ports[counter].ToString());
+                        }
+                        int selected_p = int.Parse(Console.ReadLine());
+                        selectedPort = ports[selected_p];
+                        Settings.Default.def_port = selectedPort;
+                        Settings.Default.Save();
+                    }
                 }
                 else
                 {

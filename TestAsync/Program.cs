@@ -10,14 +10,18 @@ namespace TestAsync
 {
     class Program
     {
+        const string MALINA_ID = "00001";
         static ulong i = 0;
         static int dut_selected = 0;
         static List<Dutyara> dut_list = new List<Dutyara>();
         //static Dutyara dut = new Dutyara(1);
-        static Stopwatch sw = new Stopwatch();
+        static Stopwatch sw_timeout = new Stopwatch(); // Для проверки потраченного времени на опрос ДУТа
+        static Stopwatch sw_request = new Stopwatch(); // Для проверки необходимости повторного опроса ДУТов
         static string dut_data = "";
-        // Дремя, которое даётся уту на то чтобы дать ответ
-        static int time_to_dut_read = 5000;
+        // Дремя, которое даётся дуту на то чтобы дать ответ
+        static int time_to_dut_read = 4500;
+        // Частота опроса ДУТов.
+        static int request_time = 10000;
         static int? message_status = null;
         const int MSG_SUCCESS = 1, MSG_FAIL = 0, MSG_DROP = -1;
         const string FAIL_VALUE = "65536", DROP_VALUE = "65533";
@@ -30,7 +34,7 @@ namespace TestAsync
             // TopWindowSet.setTop();
             Dutyara.GetPorts();
             dut_list.Add(new Dutyara(33722, 9600));
-            dut_list.Add(new Dutyara(56, 9600));
+            dut_list.Add(new Dutyara(22733, 9600));
             DutControl();
             //while (true)
             {
@@ -43,16 +47,17 @@ namespace TestAsync
         {
             await Task.Run(() =>
             {
-                
+                sw_request.Start();
                 while (true)
                 {
+
                     //bool tt = true;
                     while (need_request)
                     {
                         // Console.WriteLine(sw.ElapsedMilliseconds);
                         if (Dutyara.opened)
                         {
-                            sw.Restart();
+                            sw_timeout.Restart();
                             Dutyara.opened = false;
                             dut_list[dut_selected].GetData();
                             dut_list[dut_selected].SendMsg();
@@ -69,7 +74,7 @@ namespace TestAsync
                             }
                             // Так должно быть лучше, но нужно проверит, а на это нет времени:
                             else
-                            if (sw.ElapsedMilliseconds > time_to_dut_read)
+                            if (sw_timeout.ElapsedMilliseconds > time_to_dut_read)
                             {
                                 message_status = MSG_FAIL;
                             }
@@ -113,6 +118,11 @@ namespace TestAsync
                         //          Если у нового дута другая скорость меняем текущую скорость
 
 
+                    }
+                    if (sw_request.ElapsedMilliseconds > request_time)
+                    {
+                        need_request = true;
+                        sw_request.Restart();
                     }
                 }
             }
@@ -180,8 +190,8 @@ namespace TestAsync
 
                 message_status = MSG_SUCCESS;
                 dut_list[dut_selected].msg_cont.id = dut_id;
-                dut_list[dut_selected].msg_cont.fuel = dut_data_arr[2];
-                dut_list[dut_selected].msg_cont.water = dut_data_arr[3];
+                dut_list[dut_selected].msg_cont.fuel = ViaDataFormater.CorrectoinNull(dut_data_arr[2], dut_list[dut_selected].Corrector);
+                dut_list[dut_selected].msg_cont.water = ViaDataFormater.CorrectoinNull(dut_data_arr[3], dut_list[dut_selected].Corrector);
                 dut_list[dut_selected].msg_cont.temp = dut_data_arr[1];
 
             }
@@ -199,8 +209,24 @@ namespace TestAsync
             {
                 // need_request = false;
                 dut_selected %= dut_list.Count();
+                SendToVialon();
+                need_request = false;
             }
             message_status = null;
+        }
+        private static void SendToVialon()
+        {
+            string params_string = String.Empty;
+            int dl_len = dut_list.Count();
+            Dutyara counter;
+            for (int iterator = 0; iterator < dl_len; iterator++)
+            {
+                counter = dut_list[iterator];
+                params_string += ViaDataFormater.GenerateString(counter, iterator);
+            }
+            params_string = params_string.Remove(params_string.Length-1);
+
+            Console.WriteLine(params_string);
         }
 
         // Полечить ответ от ДУТа
@@ -226,8 +252,8 @@ namespace TestAsync
                 Thread.Sleep(1000);
                 if (i == 10)
                 {
-                    sw.Stop();
-                    Console.WriteLine(sw.ElapsedMilliseconds);
+                    sw_timeout.Stop();
+                    Console.WriteLine(sw_timeout.ElapsedMilliseconds);
                 }
             }
         }
