@@ -24,7 +24,8 @@ namespace TestAsync
         static int request_time = 10000;
         static int? message_status = null;
         const int MSG_SUCCESS = 1, MSG_FAIL = 0, MSG_DROP = -1;
-        const string FAIL_VALUE = "65536", DROP_VALUE = "65533";
+        const string FAIL_VALUE = "65536" /*Не верный формат данных*/, DROP_VALUE = "65533" /*Часть данных была потеряна*/,
+            PORT_VALUE = "65530" /*Ошибка COM-порта*/;
         //public static Dutyara.MessageContent dut_list[dut_selected].msg_cont = new Dutyara.MessageContent();
         static bool need_request = true;
 
@@ -214,6 +215,7 @@ namespace TestAsync
             }
             message_status = null;
         }
+
         private static void SendToVialon()
         {
             string params_string = String.Empty;
